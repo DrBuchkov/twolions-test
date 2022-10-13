@@ -13,6 +13,9 @@
             ["N" "O" "T" "R" "E" "-" "P"]
             ["x" "x" "D" "E" "T" "A" "E"]])
 
+(def width (count (first board)))
+(def height (count board))
+
 (defn all-positions [width height]
   (for [x (range width)
         y (range height)]
