@@ -13,54 +13,55 @@
             ["N" "O" "T" "R" "E" "-" "P"]
             ["x" "x" "D" "E" "T" "A" "E"]])
 
-(def width (count (first board)))
-(def height (count board))
-
 (defn all-positions [width height]
   (for [x (range width)
         y (range height)]
     [x y]))
 
 (defn neighbors [width height [x y]]
-  (->> (for [dx (range -1 2)
-             dy (range -1 2)
-             :when (not (and (= dx 0)
-                             (= dy 0)))]
-         [(+ dx x) (+ dy y)])
-       (filter (fn [[x y]]
-                 (and (<= 0 x)
-                      (<= 0 y)
-                      (< x width)
-                      (< y height))))))
+  (for [dx (range -1 2)
+        dy (range -1 2)
+        :let [nx (+ dx x)
+              ny (+ dy y)]
+        :when (and (not (and (= nx x)
+                             (= ny y)))
+                   (<= 0 x)
+                   (<= 0 y)
+                   (< x width)
+                   (< y height))]
+    [nx ny]))
 
 (defn peek-letter [board [x y]]
   (first (get-in board [y x])))
-
-(defn walk [{:keys [board width height] :as b} word pos]
-  (letfn [(acc [letter remaining pos visited]
-            (cond
-              (and (= letter (peek-letter board pos))
-                   (not (seq remaining))) true
-              (= letter (peek-letter board pos))
-              (let [ns (->> pos
-                            (neighbors width height)
-                            (remove visited))]
-                (->> ns
-                     (map (fn [n] (acc (first remaining) (rest remaining) n (conj visited pos))))
-                     (some true?)))
-              :else false))]
-    (acc (first word) (rest word) pos #{})))
 
 (defn solve [board word]
   (let [height (count board)
         width (count (first board))
         positions (all-positions width height)]
-    (boolean (->> positions
-                  (map (partial walk {:board  board
-                                      :width  width
-                                      :height height}
-                                word))
-                  (some true?)))))
+
+    (letfn [(walk [letter remaining visited pos]
+              (cond
+
+                (and (= letter (peek-letter board pos))
+                     (not (seq remaining))) true
+
+                (= letter (peek-letter board pos))
+                (let [ns (->> pos
+                              (neighbors width height)
+                              (remove visited))]
+                  (->> ns
+                       (map (partial walk
+                                     (first remaining)
+                                     (rest remaining)
+                                     (conj visited pos)))
+                       (some true?)
+                       (some?)))
+                :else false))]
+
+      (->> positions
+           (map (partial walk (first word) (rest word) #{}))
+           (some true?)
+           (some?)))))
 
 (def tests
   [{
